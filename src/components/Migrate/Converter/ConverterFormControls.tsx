@@ -2,11 +2,9 @@ import React, { useCallback, useEffect, useState } from 'react'
 import {
   ButtonBase,
   TextInput,
-  Link,
   useTheme,
   useLayout,
-  Info,
-  IconExternal,
+  Checkbox,
   GU,
   // @ts-ignore
 } from '@aragon/ui'
@@ -15,11 +13,9 @@ import { fontWeight } from '../../../style/font'
 import { useMigrateState } from '../MigrateStateProvider'
 import ConverterButton from './ConverterButton'
 import useInputValidation from './useInputValidation'
-import { networkEnvironment } from '../../../environment'
 import { shadowDepth } from '../../../style/shadow'
 import { useAccountModule } from '../../Account/AccountModuleProvider'
 import { useHistory } from 'react-router-dom'
-import { getEtherscanUrl } from '../../../utils/etherscan'
 import {
   useAnjTokenContract,
   useAntTokenV1Contract,
@@ -28,30 +24,76 @@ import { useWallet } from '../../../providers/Wallet'
 import { BigNumber } from 'ethers'
 import { mockPromiseLatency } from '../../../mock'
 import { useMounted } from '../../../hooks/useMounted'
+import { CONVERSION_RATE, ANJ_CONVERSIONS, MIGRATORS } from '../conversionUtils'
+import { TokenConversionType } from '../types'
+import { useAntStakingMinimum } from '../../../hooks/usePolledBalance'
+import { useAccountBalances } from '../../../providers/AccountBalances'
+import TokenAmount from 'token-amount'
+import ConversionInfo from './ConversionInfo'
+import ValidationWarning from './ValidationWarning'
 
 const FLOAT_REGEX = /^\d*[.]?\d*$/
 
-const { contracts } = networkEnvironment
+type FormControlsProps = {
+  tokenSymbol: string
+}
 
 type ConverterFormControlsProps = {
+  conversionType: TokenConversionType
   tokenSymbol: string
 }
 
 function ConverterFormControls({
+  conversionType,
   tokenSymbol,
 }: ConverterFormControlsProps): JSX.Element {
+  return conversionType === 'ANJ-LOCK' ? (
+    <LockConverterFormControls tokenSymbol={tokenSymbol} />
+  ) : (
+    <BaseConverterFormControls tokenSymbol={tokenSymbol} />
+  )
+}
+
+function LockConverterFormControls({
+  tokenSymbol,
+}: FormControlsProps): JSX.Element {
+  const { updateMinConvertAmount } = useMigrateState()
+  const { anj, antV2 } = useAccountBalances()
+  const antStakingMinimum = useAntStakingMinimum()
+
+  useEffect(() => {
+    if (!antStakingMinimum) {
+      return
+    }
+    const rate = 1 / CONVERSION_RATE['ANJ-LOCK']
+    const amount = new TokenAmount(antStakingMinimum, antV2.decimals).convert(
+      rate,
+      anj.decimals
+    )
+    updateMinConvertAmount(amount)
+  }, [anj.decimals, antV2.decimals, updateMinConvertAmount, antStakingMinimum])
+
+  return <BaseConverterFormControls tokenSymbol={tokenSymbol} />
+}
+
+function BaseConverterFormControls({
+  tokenSymbol,
+}: FormControlsProps): JSX.Element {
   const history = useHistory()
   const [amount, setAmount] = useState('')
+  const [showError, setShowError] = useState(false)
   const theme = useTheme()
   const { updateConvertAmount, conversionType } = useMigrateState()
   const { showAccount } = useAccountModule()
   const { layoutName } = useLayout()
+  const [agree, setAgree] = useState(conversionType !== 'ANJ-LOCK')
   const {
     formattedAmount,
     maxAmount,
     validationStatus,
     parsedAmountBn,
   } = useInputValidation(amount)
+
   const {
     handleCheckAllowanceAndProceed,
     allowanceCheckLoading,
@@ -61,23 +103,26 @@ function ConverterFormControls({
     history.push('/')
   }, [history])
 
-  const antV2ContractUrl = getEtherscanUrl(contracts.tokenAntV2)
   const stackedButtons = layoutName === 'small'
 
-  const isANJConversion = conversionType === 'ANJ'
-  const CONVERSION_RATE = isANJConversion ? 0.015 : 1
+  const isANJConversion = ANJ_CONVERSIONS.has(conversionType)
+  const conversionRate = CONVERSION_RATE[conversionType]
 
-  const handleAmountChange = useCallback((event) => {
-    const value = event.target.value
+  const handleAmountChange = useCallback(
+    (event) => {
+      const value = event.target.value
 
-    if (FLOAT_REGEX.test(value)) {
-      setAmount(value)
-    }
-  }, [])
+      setShowError(false)
+      if (FLOAT_REGEX.test(value)) {
+        setAmount(value)
+      }
+    },
+    [setAmount]
+  )
 
   const handleMaxClick = useCallback(() => {
     setAmount(maxAmount)
-  }, [maxAmount])
+  }, [maxAmount, setAmount])
 
   const handleSubmit = useCallback(
     (event) => {
@@ -85,10 +130,13 @@ function ConverterFormControls({
 
       if (validationStatus === 'notConnected') {
         showAccount()
+        return
       }
 
       if (validationStatus === 'valid') {
         handleCheckAllowanceAndProceed()
+      } else {
+        setShowError(true)
       }
     },
     [validationStatus, handleCheckAllowanceAndProceed, showAccount]
@@ -169,41 +217,37 @@ function ConverterFormControls({
             ${validationStatus === 'valid' ? `color ${theme.accent};` : ''}
           `}
         >
-          {parseFloat(formattedAmount) * CONVERSION_RATE}
+          {parseFloat(formattedAmount) * conversionRate}
         </span>{' '}
         ANTv2
       </p>
-      <Info
-        css={`
-          margin-top: ${3 * GU}px;
-          margin-bottom: ${2 * GU}px;
-        `}
-      >
-        This conversion is a one way path.{' '}
-        <Link
-          href={antV2ContractUrl}
-          css={`
-            display: inline-flex;
-            align-items: center;
-            text-decoration: none;
-            line-height: 1;
-          `}
+
+      {showError && !allowanceCheckLoading && (
+        <ValidationWarning status={validationStatus} />
+      )}
+
+      <ConversionInfo />
+      {conversionType === 'ANJ-LOCK' && (
+        <div
+          style={{
+            display: 'flex',
+            columnGap: `${GU}px`,
+            marginBottom: `${2 * GU}px`,
+          }}
         >
-          {' '}
-          Review {tokenSymbol}v2 token contract{' '}
-          <IconExternal
-            size="small"
-            css={`
-              margin-left: ${0.5 * GU}px;
-            `}
+          <Checkbox
+            checked={agree}
+            onChange={(checked: boolean) => setAgree(checked)}
           />
-        </Link>
-      </Info>
+          <label>
+            I agree with the above conditions &amp; obligations of the staking.
+          </label>
+        </div>
+      )}
       <div
         css={`
           display: grid;
           grid-gap: ${1 * GU}px;
-
           grid-template-columns: ${stackedButtons ? 'auto' : '1fr 1fr'};
         `}
       >
@@ -212,6 +256,7 @@ function ConverterFormControls({
         </BrandButton>
         <ConverterButton
           status={allowanceCheckLoading ? 'loading' : validationStatus}
+          agree={agree}
         />
       </div>
     </form>
@@ -229,8 +274,9 @@ function useCheckAllowanceAndProceed(parsedAmountBn: BigNumber) {
   } = useMigrateState()
   const antTokenV1Contract = useAntTokenV1Contract()
   const anjTokenContract = useAnjTokenContract()
-  const contract =
-    conversionType === 'ANJ' ? anjTokenContract : antTokenV1Contract
+  const contract = ANJ_CONVERSIONS.has(conversionType)
+    ? anjTokenContract
+    : antTokenV1Contract
 
   const handleCheckAllowanceAndProceed = useCallback(async () => {
     try {
@@ -248,8 +294,7 @@ function useCheckAllowanceAndProceed(parsedAmountBn: BigNumber) {
       // Without it the flicker can feel very subtly jarring
       await mockPromiseLatency(200)
 
-      const migrator =
-        conversionType === 'ANJ' ? contracts.anjMigrator : contracts.migrator
+      const migrator = MIGRATORS[conversionType]
       const {
         remaining: allowanceRemaining,
       } = await contract.functions.allowance(account, migrator)

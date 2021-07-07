@@ -5,6 +5,7 @@ import { useMigrateState } from '../MigrateStateProvider'
 import { useAccountBalances } from '../../../providers/AccountBalances'
 import { parseUnits } from '../../../utils/math-utils'
 import { BigNumber } from 'ethers'
+import { ANJ_CONVERSIONS } from '../conversionUtils'
 
 type InputValidationReturn = {
   parsedAmountBn: BigNumber
@@ -14,9 +15,9 @@ type InputValidationReturn = {
 }
 
 function useInputValidation(amount: string): InputValidationReturn {
-  const { conversionType } = useMigrateState()
+  const { conversionType, getMinConvertAmount } = useMigrateState()
   const { antV1, anj } = useAccountBalances()
-  const token = conversionType === 'ANJ' ? anj : antV1
+  const token = ANJ_CONVERSIONS.has(conversionType) ? anj : antV1
   const { balance, decimals } = token
 
   const parsedAmountBn = useMemo(() => parseInputValue(amount, decimals), [
@@ -59,8 +60,26 @@ function useInputValidation(amount: string): InputValidationReturn {
       return 'noAmount'
     }
 
+    if (conversionType === 'ANJ-LOCK') {
+      const minConvertAmount = getMinConvertAmount(anj.decimals)
+      if (!minConvertAmount) {
+        return 'loading'
+      }
+
+      const minConvertAmountBn = parseUnits(minConvertAmount, anj.decimals)
+      if (parsedAmountBn.lt(minConvertAmountBn)) {
+        return 'insufficientAmount'
+      }
+    }
+
     return 'valid'
-  }, [parsedAmountBn, balance])
+  }, [
+    parsedAmountBn,
+    balance,
+    conversionType,
+    anj.decimals,
+    getMinConvertAmount,
+  ])
 
   return {
     parsedAmountBn,

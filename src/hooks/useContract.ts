@@ -11,7 +11,9 @@ import tokenAntV1Abi from '../abi/token-ant-v1.json'
 import tokenAntV2Abi from '../abi/token-ant-v1.json'
 import tokenAnjAbi from '../abi/token-anj.json'
 import migratorAbi from '../abi/migrator.json'
-import anjMigratorAbi from '../abi/anj-migrator.json'
+import courtAbi from '../abi/court.json'
+import anjNoLockMinterMigratorAbi from '../abi/anj-migrator.json'
+import anjLockMinterMigratorAbi from '../abi/anj-lock-migrator.json'
 import uniswapPoolAbi from '../abi/uniswap-pool.json'
 import incentivePoolAbi from '../abi/incentive-pool.json'
 import balancerPoolAbi from '../abi/balancer-pool.json'
@@ -22,6 +24,7 @@ import { Migrator } from '../abi/types/Migrator'
 import { UniswapPool } from '../abi/types/UniswapPool'
 import { IncentivePool } from '../abi/types/IncentivePool'
 import { BalancerPool } from '../abi/types/BalancerPool'
+import { Court } from '../abi/types/Court'
 
 const { endpoints, contracts } = networkEnvironment
 
@@ -71,22 +74,36 @@ function useContract<T>({
   }, [abi, account, address, ethers, signer, readOnly])
 }
 
-export function useMigratorContract(readOnly?: boolean): Migrator | null {
-  const { migrator } = contracts
+export function useAntV2MigratorContract(readOnly?: boolean): Migrator | null {
+  const { antV2Migrator } = contracts
 
   return useContract<Migrator>({
-    address: migrator,
+    address: antV2Migrator,
     abi: migratorAbi,
     readOnly,
   })
 }
 
-export function useAnjMigratorContract(readOnly?: boolean): Migrator | null {
-  const { anjMigrator } = contracts
+export function useAnjNoLockMinterMigratorContract(
+  readOnly?: boolean
+): Migrator | null {
+  const { anjNoLockMinterMigrator } = contracts
 
   return useContract<Migrator>({
-    address: anjMigrator,
-    abi: anjMigratorAbi,
+    address: anjNoLockMinterMigrator,
+    abi: anjNoLockMinterMigratorAbi,
+    readOnly,
+  })
+}
+
+export function useAnjLockMinterMigratorContract(
+  readOnly?: boolean
+): Migrator | null {
+  const { anjLockMinterMigrator } = contracts
+
+  return useContract<Migrator>({
+    address: anjLockMinterMigrator,
+    abi: anjLockMinterMigratorAbi,
     readOnly,
   })
 }
@@ -151,6 +168,16 @@ export function useBalancerPoolContract(
   return useContract<BalancerPool>({
     address: antEthBalancerPool,
     abi: balancerPoolAbi,
+    readOnly,
+  })
+}
+
+export function useCourtContract(readOnly?: boolean): Court | null {
+  const { court } = contracts
+
+  return useContract<Court>({
+    address: court,
+    abi: courtAbi,
     readOnly,
   })
 }

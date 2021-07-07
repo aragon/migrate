@@ -55,7 +55,7 @@ function AccountBalancesProvider({
   const antV2BalanceBn = useAntTokenBalance('v2', account)
   const antV2MigratorBalanceBn = useAntTokenBalance(
     'v2',
-    contracts.migrator,
+    contracts.antV2Migrator,
     true
   )
   const antV2TotalSupplyBn = useAntTotalSupply('v2')

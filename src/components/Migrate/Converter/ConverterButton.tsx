@@ -7,25 +7,24 @@ import BrandButton from '../../BrandButton/BrandButton'
 import { ValidationStatus } from '../types'
 import LoadingSpinner from '../../LoadingSpinner/LoadingSpinner'
 
-type ButtonStatus = ValidationStatus | 'loading'
+type ButtonStatus = ValidationStatus
 
 const BUTTON_MESSAGES: Record<ButtonStatus, string> = {
   notConnected: 'Connect wallet',
-  insufficientBalance: 'Insufficient balance',
-  noAmount: 'Enter an amount',
+  insufficientBalance: 'Continue',
+  insufficientAmount: 'Continue',
+  noAmount: 'Continue',
   valid: 'Continue',
   loading: 'Loading…',
 }
 
 type ConverterButtonProps = {
   status: ButtonStatus
+  agree: boolean
 }
 
-function ConverterButton({ status }: ConverterButtonProps): JSX.Element {
-  const disableButton =
-    status === 'insufficientBalance' ||
-    status === 'noAmount' ||
-    status === 'loading'
+function ConverterButton({ status, agree }: ConverterButtonProps): JSX.Element {
+  const disableButton = status === 'loading' || !agree
 
   const icon = useMemo(() => {
     if (status === 'notConnected') {

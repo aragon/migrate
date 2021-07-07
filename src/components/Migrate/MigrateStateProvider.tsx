@@ -7,6 +7,7 @@ import React, {
   useState,
 } from 'react'
 import { ConversionStage, TokenConversionType } from './types'
+import TokenAmount from 'token-amount'
 
 type MigrateStateProviderProps = {
   conversionType: TokenConversionType
@@ -26,6 +27,8 @@ type MigrateStateContext = {
   goToSigning: () => void
   goToForm: () => void
   updateConvertAmount: (amount: BigNumber | null) => void
+  updateMinConvertAmount: (amount: TokenAmount | null) => void
+  getMinConvertAmount: (digits?: number) => string | null
   changeSigningConfiguration: (config: SigningConfiguration) => void
 }
 
@@ -45,6 +48,10 @@ function MigrateStateProvider({
     MigrateStateContext['convertAmount']
   >(null)
 
+  const [minConvertAmount, setMinConvertAmount] = useState<TokenAmount | null>(
+    null
+  )
+
   const [signingConfiguration, setSigningConfiguration] = useState<
     MigrateStateContext['signingConfiguration']
   >('directApproveAndCall')
@@ -54,6 +61,19 @@ function MigrateStateProvider({
   const updateConvertAmount = useCallback(
     (amount) => setConvertAmount(amount),
     []
+  )
+  const updateMinConvertAmount = useCallback(
+    (amount) => setMinConvertAmount(amount),
+    []
+  )
+  const getMinConvertAmount = useCallback(
+    (digits?: number): string | null => {
+      if (!minConvertAmount) {
+        return null
+      }
+      return minConvertAmount.format({ commify: false, digits })
+    },
+    [minConvertAmount]
   )
   const changeSigningConfiguration = useCallback(
     (config) => setSigningConfiguration(config),
@@ -69,6 +89,8 @@ function MigrateStateProvider({
       goToSigning,
       convertAmount,
       updateConvertAmount,
+      updateMinConvertAmount,
+      getMinConvertAmount,
       goToForm,
     }),
     [
@@ -79,6 +101,8 @@ function MigrateStateProvider({
       goToSigning,
       convertAmount,
       updateConvertAmount,
+      updateMinConvertAmount,
+      getMinConvertAmount,
       goToForm,
     ]
   )

@@ -20,11 +20,13 @@ export interface EnvNetworkConfig {
   }
   ipfsGateway: string
   contracts: {
+    court: string
     tokenAntV1: string
     tokenAntV2: string
     tokenAnj: string
-    anjMigrator: string
-    migrator: string
+    anjLockMinterMigrator: string
+    anjNoLockMinterMigrator: string
+    antV2Migrator: string
     antEthUniswapPool?: string
     antUniIncentivePool?: string
     antEthBalancerPool?: string

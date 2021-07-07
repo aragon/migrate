@@ -9,6 +9,7 @@ import LpInfoModal from './LpInfoModal/LpInfoModal'
 import { bigNum } from '../../utils/math-utils'
 import { useWallet } from '../../providers/Wallet'
 import { networkEnvironment } from '../../environment'
+import { CONVERSION_RATE } from '../Migrate/conversionUtils'
 
 const { chainId } = networkEnvironment
 
@@ -80,7 +81,7 @@ function Balances({
           balance={formattedAnjBalance}
           accountConnected={accountConnected}
           showLpBalance={false}
-          rate={0.015}
+          rate={CONVERSION_RATE['ANJ']}
           lockupPeriod={0}
         />
         <TokenConversionCard
@@ -88,8 +89,7 @@ function Balances({
           balance={formattedAnjBalance}
           accountConnected={accountConnected}
           showLpBalance={false}
-          available={false}
-          rate={0.044}
+          rate={CONVERSION_RATE['ANJ-LOCK']}
           lockupPeriod={12}
         />
         <TokenConversionCard

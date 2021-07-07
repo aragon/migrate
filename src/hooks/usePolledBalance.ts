@@ -15,6 +15,7 @@ import {
   useBalancerPoolContract,
   useIncentivePoolContract,
   useUniswapPoolContract,
+  useCourtContract,
 } from './useContract'
 import { useInterval } from './useInterval'
 import { useMounted } from './useMounted'
@@ -341,4 +342,40 @@ export function useAntTotalSupply(tokenVersion: 'v1' | 'v2'): BigNumber | null {
   }, [mounted, tokenContract])
 
   return totalSupply
+}
+
+export function useAntStakingMinimum(readOnly?: boolean): BigNumber | null {
+  const courtContract = useCourtContract(readOnly)
+  const mounted = useMounted()
+  const [minStakeAmount, setMinStakeAmount] = useState<BigNumber | null>(null)
+
+  const getMinStakeAmount = useCallback(
+    async (clear) => {
+      if (!courtContract) {
+        // Clear any existing balance
+        if (mounted()) {
+          setMinStakeAmount(null)
+        }
+        return
+      }
+
+      try {
+        const termId = await courtContract.getCurrentTermId()
+        const balance = await courtContract.getMinActiveBalance(termId)
+
+        // Avoid unnessesary re-renders by only updating value when it has actually changed
+        if (mounted() && (!minStakeAmount || !balance.eq(minStakeAmount))) {
+          setMinStakeAmount(balance)
+        }
+      } catch (err) {
+        captureErrorWithSentry(err)
+        clear()
+      }
+    },
+    [courtContract, mounted, minStakeAmount]
+  )
+
+  useInterval(getMinStakeAmount, POLL_INTERVAL)
+
+  return minStakeAmount
 }

@@ -1,0 +1,20 @@
+[
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "getCurrentTermId",
+    "outputs": [{ "name": "", "type": "uint64" }],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [{ "name": "_termId", "type": "uint64" }],
+    "name": "getMinActiveBalance",
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

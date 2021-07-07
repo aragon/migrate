@@ -6,6 +6,7 @@ import { fontWeight } from '../../../style/font'
 import { radius } from '../../../style/radius'
 import { useMigrateState } from '../MigrateStateProvider'
 import TokenGraphic from '../../TokenGraphic/TokenGraphic'
+import { CONVERSION_RATE, ANJ_CONVERSIONS } from '../conversionUtils'
 
 type ConversionRateProps = {
   compactMode: boolean
@@ -47,8 +48,8 @@ function ConversionRate({
   const theme = useTheme()
   const { conversionType } = useMigrateState()
 
-  const isANJConversion = conversionType === 'ANJ'
-  const CONVERSION_RATE = isANJConversion ? 0.015 : 1
+  const isANJConversion = ANJ_CONVERSIONS.has(conversionType)
+  const conversionRate = CONVERSION_RATE[conversionType]
 
   return (
     <div>
@@ -105,7 +106,7 @@ function ConversionRate({
             -webkit-text-fill-color: transparent;
           `}
         >
-          1 : <Rate value={CONVERSION_RATE} />
+          1 : <Rate value={conversionRate} />
         </h4>
         <div
           css={`
@@ -123,11 +124,11 @@ function ConversionRate({
           >
             Conversion rate
           </h3>
-          {isANJConversion && (
+          {conversionType === 'ANJ' && (
             <Help hint="Why this rate?">
-              The proposal consists of locking ANJ’s price at rate (0.015 ANT
-              for 1 ANJ) and minting 549,862 ANT (1.37% inflation) to redeem all
-              ANJ in circulation at that rate.
+              The proposal consists of locking ANJ’s price at rate (
+              {conversionRate} ANT for 1 ANJ) and minting 549,862 ANT (1.37%
+              inflation) to redeem all ANJ in circulation at that rate.
             </Help>
           )}
         </div>
@@ -159,7 +160,7 @@ function ConversionRate({
               color: ${theme.surfaceContent};
             `}
           >
-            {CONVERSION_RATE}
+            {conversionRate}
           </span>{' '}
           ANTv2
         </p>

@@ -19,7 +19,7 @@ const SINGLE_TX_DESCRIPTIONS: Descriptions = {
     </>
   ),
   success:
-    'Success! The transaction has been sent to the network for processing. You can now review other migration options.',
+    'Success! The transaction has been sent to the network for processing.',
 }
 
 const MULTI_TX_DESCRIPTIONS: Descriptions = {
@@ -36,7 +36,7 @@ const MULTI_TX_DESCRIPTIONS: Descriptions = {
     </>
   ),
   success:
-    'Success! The transactions have been sent to the network for processing. You can now review other migration options.',
+    'Success! The transactions have been sent to the network for processing.',
 }
 
 type SigningInfoProps = {
